@@ -1,6 +1,6 @@
 (in-package :local.http-server)
 
-(defvar *server-socket* (usocket::socket-listen "0.0.0.0" 8080 :reuseaddress t))
+(defvar *server-socket* nil)
 (defvar *active-connections* nil)
 (defvar *current-conn* nil)
 
@@ -97,8 +97,11 @@
   (let ((str (make-array 0 :fill-pointer 0 :adjustable t :element-type 'character))
 	(file-name (probe-file (subseq (req-path req) 1)))
 	(file-arr (make-array 0 :fill-pointer 0 :adjustable t :element-type 'unsigned-byte)))
+    ;; This displays a default 404 page if no page was found.
+    ;; TODO: make the user specify a custom 404 page.
     (if (not (null file-name))
-      (read-file-to-array file-arr file-name))
+      (read-file-to-array file-arr file-name)
+      (add-str file-arr (str-to-bytes "<h1>404 NOT FOUND</h1>")))
     ;; status line
     (add-str str (req-version req))
     (add-str str (if (null file-name)
@@ -123,9 +126,7 @@
     ;; Since data might be binary, we are simply going to turn str
     ;; into a byte vector, then add the file's data to it.
     (setf str (str-to-bytes str))
-    (if (null file-name)
-      (add-str str (str-to-bytes "404 NOT FOUND BITCH")) ;add-str isn't actually specific to strings
-      (add-str str file-arr))
+    (add-str str file-arr)
     str))
 
 (defun handle-conn ()
@@ -154,6 +155,7 @@
      ,@body))
 
 (defun main ()
+  (setf *server-socket* (usocket:socket-listen "0.0.0.0" 8080))
   (while t
     (force-output)
     (let ((new-conn (usocket::socket-accept *server-socket* :element-type '(unsigned-byte 8))))
