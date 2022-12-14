@@ -1,4 +1,4 @@
-(in-package :local.http-server)
+(in-package :http-daemon)
 
 ;; Some conversion functions.
 ;; The sockets are all set to have :element-type '(unsigned-byte 8)

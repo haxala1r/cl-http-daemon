@@ -1,4 +1,4 @@
-(in-package :local.http-server)
+(in-package :http-daemon)
 
 (defvar *server-socket* nil)
 (defvar *active-connections* nil)
@@ -15,7 +15,7 @@
 
 (defun close-conn (conn)
   (setf *active-connections* (remove-item conn *active-connections*))
-  (usocket:socket-close conn))
+  (socket-close conn))
 
 ;; This class holds the information about a request
 ;; in an easy to access format.
@@ -48,8 +48,8 @@
     (print-unreadable-object (req out :type t)
       (format t "user ~a wanted to ~a ~a at ~a from etc." req-agent req-method req-path req-host))))
 
-;; Parse a request and return a list containing the necessary info.
-;; NOTE: this just returns a parsed list containing the useful data.
+;; Parse a request and return an object containing the necessary info.
+;; NOTE: this just returns a parsed object containing the useful data.
 ;; POST request bodies etc. are just ignored for now.
 (defun parse-request(str)
   (let ((lines (split-str (remove #\return str) #\linefeed))
@@ -135,8 +135,9 @@
       ;; perform some checks on certain parameters
       (if (string= (req-path req) "/")
         (setf (req-path req) "/index.html"))
+      ; sock-write defined in stream.lisp
       (sock-write *current-conn* (make-response req))
-      (force-output (usocket:socket-stream *current-conn*))
+      (force-output (socket-stream *current-conn*))
       (if (string= (req-connection req) "close")
 	(return))))
   (close-conn *current-conn*))
@@ -144,9 +145,9 @@
 (defun cleanup ()
   (format t "performing cleanup~%")
   (loop for i in *active-connections*
-	do (usocket:socket-close i))
+	do (socket-close i))
   (format t "All connections have been closed~%")
-  (usocket:socket-close *server-socket*)
+  (socket-close *server-socket*)
   (format t "Server socket stopped~%"))
 
 ;convenience
@@ -155,10 +156,10 @@
      ,@body))
 
 (defun main ()
-  (setf *server-socket* (usocket:socket-listen "0.0.0.0" 8080))
+  (setf *server-socket* (socket-listen "0.0.0.0" 8080))
   (while t
     (force-output)
-    (let ((new-conn (usocket::socket-accept *server-socket* :element-type '(unsigned-byte 8))))
+    (let ((new-conn (socket-accept *server-socket* :element-type '(unsigned-byte 8))))
       (push new-conn *active-connections*)
-      (bordeaux-threads:make-thread 'handle-conn 
-				  :initial-bindings (acons '*current-conn* new-conn nil)))))
+      (make-thread 'handle-conn 
+		   :initial-bindings (acons '*current-conn* new-conn nil)))))
