@@ -1,5 +1,9 @@
 (in-package :http-daemon)
 
+(defvar *server-port* nil)
+(if (null *server-port*)
+  (setf *server-port* 8080))
+
 (defvar *server-socket* nil)
 (defvar *active-connections* nil)
 (defvar *current-conn* nil)
@@ -156,7 +160,7 @@
      ,@body))
 
 (defun main ()
-  (setf *server-socket* (socket-listen "0.0.0.0" 8080))
+  (setf *server-socket* (socket-listen "0.0.0.0" *server-port*))
   (while t
     (force-output)
     (let ((new-conn (socket-accept *server-socket* :element-type '(unsigned-byte 8))))
