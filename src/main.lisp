@@ -160,6 +160,10 @@
      ,@body))
 
 (defun main ()
+  (parse-args)
+  (print *args-parsed*)
+  ;; TODO: proper error checking
+  (setf *server-port* (parse-integer (or (get-arg "-p") "8080")))
   (setf *server-socket* (socket-listen "0.0.0.0" *server-port*))
   (while t
     (let ((new-conn (socket-accept *server-socket* :element-type '(unsigned-byte 8))))
