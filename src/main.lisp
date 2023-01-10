@@ -162,7 +162,6 @@
 (defun main ()
   (setf *server-socket* (socket-listen "0.0.0.0" *server-port*))
   (while t
-    (force-output)
     (let ((new-conn (socket-accept *server-socket* :element-type '(unsigned-byte 8))))
       (push new-conn *active-connections*)
       (make-thread 'handle-conn 
